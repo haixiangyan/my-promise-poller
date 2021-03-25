@@ -10,6 +10,7 @@ $fixedBtn.onclick = async () => {
       fixedCounter += 1
       $fixedContent.innerText = fixedCounter.toString()
     },
+    shouldContinue: () => fixedCounter < 10,
     interval: 1000
   })
 }
