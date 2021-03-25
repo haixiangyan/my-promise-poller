@@ -3,18 +3,31 @@ import {delay} from './utils'
 interface Options {
   taskFn: Function
   interval: number
+  masterTimeout?: number
 }
 
 const promisePoller = (options: Options) => {
-  const {taskFn, interval} = options
+  const {taskFn, interval, masterTimeout} = options
 
-  const poll = () => {
-    taskFn()
+  let timeoutId
 
-    delay(interval).then(poll)
-  }
+  return new Promise((resolve, reject) => {
+    if (masterTimeout) {
+      timeoutId = setTimeout(() => {
+        reject('Master timeout')
+      }, masterTimeout)
+    }
 
-  poll()
+    const poll = () => {
+      const result = taskFn()
+
+      resolve(result)
+
+      delay(interval).then(poll)
+    }
+
+    poll()
+  })
 }
 
 export default promisePoller

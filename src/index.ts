@@ -4,8 +4,8 @@ const $fixedBtn = document.querySelector<HTMLButtonElement>('#fixed-btn')
 const $fixedContent = document.querySelector<HTMLParagraphElement>('#fixed-content')
 let fixedCounter = 0
 
-$fixedBtn.onclick = () => {
-  promisePoller({
+$fixedBtn.onclick = async () => {
+  await promisePoller({
     taskFn: () => {
       fixedCounter += 1
       $fixedContent.innerText = fixedCounter.toString()
