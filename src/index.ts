@@ -5,8 +5,11 @@ const $fixedContent = document.querySelector<HTMLParagraphElement>('#fixed-conte
 let fixedCounter = 0
 
 $fixedBtn.onclick = () => {
-  promisePoller(() => {
-    fixedCounter += 1
-    $fixedContent.textContent = fixedCounter.toString()
-  }, 1000)
+  promisePoller({
+    taskFn: () => {
+      fixedCounter += 1
+      $fixedContent.innerText = fixedCounter.toString()
+    },
+    interval: 1000
+  })
 }
