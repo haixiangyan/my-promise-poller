@@ -1,15 +1,12 @@
-import './styles.css'
-import Icon from './icon.png';
+import promisePoller from './lib/index'
 
-// Add title
-const text: string = 'A minimum template for building a static web app with TypeScript'
+const $fixedBtn = document.querySelector<HTMLButtonElement>('#fixed-btn')
+const $fixedContent = document.querySelector<HTMLParagraphElement>('#fixed-content')
+let fixedCounter = 0
 
-const $content = document.querySelector('#content')
-
-$content.textContent = text
-
-// Add the image to our existing div.
-const myIcon = new Image();
-myIcon.src = Icon;
-
-document.body.appendChild(myIcon);
+$fixedBtn.onclick = () => {
+  promisePoller(() => {
+    fixedCounter += 1
+    $fixedContent.textContent = fixedCounter.toString()
+  }, 1000)
+}
