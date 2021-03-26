@@ -1,11 +1,12 @@
-import {delay, timeout} from './utils'
+import {CANCEL_TOKEN, delay, timeout} from './utils'
 
 interface Options {
   taskFn: Function // 轮询任务
   interval: number // 轮询周期
   masterTimeout?: number // 整个轮询过程的 timeout
-  shouldContinue?: (err: string | null, result: any) => boolean // 当次轮询后是否需要继续
+  shouldContinue?: (err: string | null, result?: any) => boolean // 当次轮询后是否需要继续
   taskTimeout?: number // 轮询任务的 timeout
+  retries?: number //轮询任务失败后重试次数
 }
 
 const defaultOptions: Partial<Options> = {
@@ -16,21 +17,33 @@ const promisePoller = (options: Options) => {
   // 合并默认设置
   options = {...defaultOptions, ...options}
 
-  const {taskFn, interval, masterTimeout, taskTimeout, shouldContinue} = options
+  const {taskFn, interval, masterTimeout, taskTimeout, shouldContinue, retries} = options
 
+  let polling = true
   let timeoutId: null | number
   let rejections: Array<Error | string> = []
+  let retriesRemain = retries
 
   return new Promise((resolve, reject) => {
     if (masterTimeout) {
       timeoutId = window.setTimeout(() => {
         reject('Master timeout')
+        polling = false
       }, masterTimeout)
     }
 
     // 轮询函数
     const poll = () => {
-      let taskPromise = Promise.resolve(taskFn())
+      let taskResult = taskFn()
+
+      // 同步结束任务
+      if (taskResult === false) {
+        taskResult = Promise.reject(taskResult)
+        reject(rejections)
+        polling = false
+      }
+
+      let taskPromise = Promise.resolve(taskResult)
 
       if (taskTimeout) {
         taskPromise = timeout(taskPromise, taskTimeout)
@@ -51,8 +64,19 @@ const promisePoller = (options: Options) => {
           }
         })
         .catch(error => {
+          // 异步结束任务
+          if (error === CANCEL_TOKEN) {
+            reject(rejections)
+            polling = false
+          }
+
           rejections.push(error)
-          reject(rejections)
+
+          if (--retriesRemain === 0 || !shouldContinue(error)) {
+            reject(rejections)
+          } else if (polling) {
+            delay(interval).then(poll);
+          }
         })
     }
 
