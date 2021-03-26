@@ -2,7 +2,7 @@ export const CANCEL_TOKEN = 'CANCEL_TOKEN'
 
 export const timeout = (promise: Promise<any>, interval: number) => {
   return new Promise((resolve, reject) => {
-    const timeoutId = setTimeout(() => reject('Task timeout'), interval)
+    const timeoutId = setTimeout(() => reject(new Error('Task timeout')), interval)
 
     promise.then(result => {
       clearTimeout(timeoutId)

@@ -4,20 +4,13 @@ interface Options {
   taskFn: Function // 轮询任务
   interval: number // 轮询周期
   masterTimeout?: number // 整个轮询过程的 timeout
-  shouldContinue?: (err: string | null, result?: any) => boolean // 当次轮询后是否需要继续
+  shouldContinue: (err: Error | null, result?: any) => boolean // 当次轮询后是否需要继续
   taskTimeout?: number // 轮询任务的 timeout
   retries?: number //轮询任务失败后重试次数
 }
 
-const defaultOptions: Partial<Options> = {
-  shouldContinue: (err: string | null) => !err
-}
-
 const promisePoller = (options: Options) => {
-  // 合并默认设置
-  options = {...defaultOptions, ...options}
-
-  const {taskFn, interval, masterTimeout, taskTimeout, shouldContinue, retries} = options
+  const {taskFn, interval, masterTimeout, taskTimeout, shouldContinue, retries = 5} = options
 
   let polling = true
   let timeoutId: null | number
@@ -27,7 +20,7 @@ const promisePoller = (options: Options) => {
   return new Promise((resolve, reject) => {
     if (masterTimeout) {
       timeoutId = window.setTimeout(() => {
-        reject('Master timeout')
+        reject(new Error('Master timeout'))
         polling = false
       }, masterTimeout)
     }
@@ -63,9 +56,9 @@ const promisePoller = (options: Options) => {
             resolve(result)
           }
         })
-        .catch(error => {
+        .catch((error: Error) => {
           // 异步结束任务
-          if (error === CANCEL_TOKEN) {
+          if (error.message === CANCEL_TOKEN) {
             reject(rejections)
             polling = false
           }
