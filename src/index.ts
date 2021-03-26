@@ -1,38 +1,67 @@
 import promisePoller from './lib/index'
 import {CANCEL_TOKEN} from "./lib/utils"
 
-const $fixedBtn = document.querySelector<HTMLButtonElement>('#fixed-btn')
-const $fixedContent = document.querySelector<HTMLParagraphElement>('#fixed-content')
-const $asyncFixedBtn = document.querySelector<HTMLButtonElement>('#async-fixed-btn')
-const $asyncFixedContent = document.querySelector<HTMLParagraphElement>('#async-fixed-content')
+const $start = document.querySelector<HTMLButtonElement>('#start')
+const $stop = document.querySelector<HTMLButtonElement>('#stop')
+const $asyncStop = document.querySelector<HTMLButtonElement>('#async-stop')
+
+const $fixedCounter = document.querySelector<HTMLParagraphElement>('#fixed-counter')
+const $linearCounter = document.querySelector<HTMLParagraphElement>('#linear-counter')
+const $exponentialCounter = document.querySelector<HTMLParagraphElement>('#exponential-counter')
+
 let fixedCounter = 0
-let asyncFixedCounter = 0
+let linearCounter = 0
+let exponentialCounter = 0
 
-$fixedBtn.onclick = async () => {
-  await promisePoller({
-    taskFn: () => {
-      fixedCounter += 1
-      $fixedContent.innerText = fixedCounter.toString()
-    },
-    shouldContinue: () => fixedCounter < 10,
-    interval: 1000
-  })
-}
+let stop = false
+let asyncStop = false
 
-$asyncFixedBtn.onclick = async () => {
-  await promisePoller({
+const limit = 99999
+
+$start.onclick = async () => {
+  promisePoller({
+    strategy: 'fixed-interval',
     taskFn: async () => {
-      if (asyncFixedCounter === 3) {
+      if (asyncStop) {
         throw new Error(CANCEL_TOKEN)
       }
 
-      asyncFixedCounter += 1
+      fixedCounter += 1
+      $fixedCounter.innerText = fixedCounter.toString()
 
-      $asyncFixedContent.innerText = asyncFixedCounter.toString()
+      return !stop
     },
-    interval: 1000,
-    shouldContinue: () => {
-      return asyncFixedCounter < 10
-    }
+    shouldContinue: () => fixedCounter < limit,
+  })
+  promisePoller({
+    strategy: 'linear-backoff',
+    taskFn : async () => {
+      if (asyncStop) {
+        throw new Error(CANCEL_TOKEN)
+      }
+
+      linearCounter += 1
+      $linearCounter.innerText = linearCounter.toString()
+
+      return !stop
+    },
+    shouldContinue: () => linearCounter < limit
+  })
+  promisePoller({
+    strategy: 'exponential-backoff',
+    taskFn : async () => {
+      if (asyncStop) {
+        throw new Error(CANCEL_TOKEN)
+      }
+
+      exponentialCounter += 1
+      $exponentialCounter.innerText = exponentialCounter.toString()
+
+      return !stop
+    },
+    shouldContinue: () => linearCounter < limit
   })
 }
+
+$stop.onclick = () => stop = true
+$asyncStop.onclick = () => asyncStop = true

@@ -7,20 +7,24 @@
 <body>
 <h1>my-promise-poller</h1>
 
-<h2>fixed-interval</h2>
 <div>
-  <button id="fixed-btn">fixed-interval polling</button>
-  <p>
-    <span>Counter: </span>
-    <span id="fixed-content">0</span>
-  </p>
+  <button id="start">开始</button>
+  <button id="stop">同步结束</button>
+  <button id="async-stop">异步结束</button>
 </div>
 
 <div>
-  <button id="async-fixed-btn">async fixed-interval polling</button>
   <p>
-    <span>Async Counter: </span>
-    <span id="async-fixed-content">0</span>
+    <span>fixed-interval counter: </span>
+    <span id="fixed-counter">0</span>
+  </p>
+  <p>
+    <span>linear-backoff counter: </span>
+    <span id="linear-counter">0</span>
+  </p>
+  <p>
+    <span>exponential-backoff counter: </span>
+    <span id="exponential-counter">0</span>
   </p>
 </div>
 </body>

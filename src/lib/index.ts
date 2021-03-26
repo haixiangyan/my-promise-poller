@@ -14,6 +14,7 @@ const promisePoller = (options: Options) => {
   let retriesRemain = retries
 
   return new Promise((resolve, reject) => {
+    // 整个轮询过程超时
     if (masterTimeout) {
       timeoutId = window.setTimeout(() => {
         reject(new Error('Master timeout'))
@@ -41,7 +42,7 @@ const promisePoller = (options: Options) => {
       taskPromise
         .then(result => {
           if (shouldContinue(null, result)) {
-            const nextInterval = strategy.getNextInterval(retriesRemain, options)
+            const nextInterval = strategy.getNextInterval(retriesRemain, mergedOptions)
             // 继续轮询
             delay(nextInterval).then(poll)
           } else {
@@ -63,6 +64,7 @@ const promisePoller = (options: Options) => {
           rejections.push(error)
 
           if (--retriesRemain === 0 || !shouldContinue(error)) {
+            // 不需要轮询
             reject(rejections)
           } else if (polling) {
             const nextInterval = strategy.getNextInterval(retriesRemain, options)
