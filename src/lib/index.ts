@@ -19,6 +19,7 @@ const promisePoller = (options: Options) => {
   const {taskFn, interval, masterTimeout, taskTimeout, shouldContinue} = options
 
   let timeoutId: null | number
+  let rejections: Array<Error | string> = []
 
   return new Promise((resolve, reject) => {
     if (masterTimeout) {
@@ -50,7 +51,8 @@ const promisePoller = (options: Options) => {
           }
         })
         .catch(error => {
-
+          rejections.push(error)
+          reject(rejections)
         })
     }
 
