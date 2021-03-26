@@ -21,6 +21,7 @@ const limit = 99999
 $start.onclick = async () => {
   promisePoller({
     strategy: 'fixed-interval',
+    interval: 100,
     taskFn: async () => {
       if (asyncStop) {
         throw new Error(CANCEL_TOKEN)
@@ -35,6 +36,8 @@ $start.onclick = async () => {
   })
   promisePoller({
     strategy: 'linear-backoff',
+    start: 100,
+    increment: 100,
     taskFn : async () => {
       if (asyncStop) {
         throw new Error(CANCEL_TOKEN)
@@ -49,6 +52,8 @@ $start.onclick = async () => {
   })
   promisePoller({
     strategy: 'exponential-backoff',
+    min: 100,
+    max: 3000,
     taskFn : async () => {
       if (asyncStop) {
         throw new Error(CANCEL_TOKEN)

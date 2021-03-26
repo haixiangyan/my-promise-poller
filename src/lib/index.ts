@@ -4,7 +4,7 @@ import {Options, strategies} from './contants'
 const promisePoller = (options: Options) => {
   const strategy = strategies[options.strategy] || strategies['fixed-interval']
 
-  const mergedOptions = {...options, ...strategy.defaults}
+  const mergedOptions = {...strategy.defaults, ...options}
 
   const {taskFn, masterTimeout, taskTimeout, shouldContinue, retries = 5} = mergedOptions
 
