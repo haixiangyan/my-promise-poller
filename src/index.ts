@@ -2,7 +2,6 @@ import promisePoller from './lib/index'
 import {CANCEL_TOKEN} from "./lib/utils"
 
 const $start = document.querySelector<HTMLButtonElement>('#start')
-const $stop = document.querySelector<HTMLButtonElement>('#stop')
 const $asyncStop = document.querySelector<HTMLButtonElement>('#async-stop')
 
 const $fixedCounter = document.querySelector<HTMLParagraphElement>('#fixed-counter')
@@ -14,7 +13,6 @@ let linearCounter = 0
 let exponentialCounter = 0
 
 let stop = false
-let asyncStop = false
 
 const limit = 99999
 
@@ -23,14 +21,12 @@ $start.onclick = async () => {
     strategy: 'fixed-interval',
     interval: 100,
     taskFn: async () => {
-      if (asyncStop) {
+      if (stop) {
         throw new Error(CANCEL_TOKEN)
       }
 
       fixedCounter += 1
       $fixedCounter.innerText = fixedCounter.toString()
-
-      return !stop
     },
     shouldContinue: () => fixedCounter < limit,
   })
@@ -39,14 +35,12 @@ $start.onclick = async () => {
     start: 100,
     increment: 100,
     taskFn : async () => {
-      if (asyncStop) {
+      if (stop) {
         throw new Error(CANCEL_TOKEN)
       }
 
       linearCounter += 1
       $linearCounter.innerText = linearCounter.toString()
-
-      return !stop
     },
     shouldContinue: () => linearCounter < limit
   })
@@ -55,18 +49,15 @@ $start.onclick = async () => {
     min: 100,
     max: 3000,
     taskFn : async () => {
-      if (asyncStop) {
+      if (stop) {
         throw new Error(CANCEL_TOKEN)
       }
 
       exponentialCounter += 1
       $exponentialCounter.innerText = exponentialCounter.toString()
-
-      return !stop
     },
     shouldContinue: () => linearCounter < limit
   })
 }
 
-$stop.onclick = () => stop = true
-$asyncStop.onclick = () => asyncStop = true
+$asyncStop.onclick = () => stop = true
