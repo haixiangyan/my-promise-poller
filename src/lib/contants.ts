@@ -1,24 +1,4 @@
-type GetNextInterval = (count: number, strategy: Strategy) => number
-
-interface FixedIntervalStrategy {
-  interval: number
-  getNextInterval: GetNextInterval
-}
-
-interface LinearBackoffStrategy {
-  start: number
-  increment: number
-  getNextInterval: GetNextInterval
-}
-
-interface ExponentialBackoffStrategy {
-  min: number
-  max: number
-  getNextInterval: GetNextInterval
-}
-
 type StrategyName = 'fixed-interval' | 'linear-backoff' | 'exponential-backoff'
-type Strategy = FixedIntervalStrategy | LinearBackoffStrategy | ExponentialBackoffStrategy
 
 export interface Options {
   taskFn: Function // 轮询任务
