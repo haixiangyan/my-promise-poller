@@ -1,16 +1,12 @@
 import {CANCEL_TOKEN, delay, timeout} from './utils'
-
-interface Options {
-  taskFn: Function // 轮询任务
-  interval: number // 轮询周期
-  masterTimeout?: number // 整个轮询过程的 timeout
-  shouldContinue: (err: Error | null, result?: any) => boolean // 当次轮询后是否需要继续
-  taskTimeout?: number // 轮询任务的 timeout
-  retries?: number //轮询任务失败后重试次数
-}
+import {Options, strategies} from './contants'
 
 const promisePoller = (options: Options) => {
-  const {taskFn, interval, masterTimeout, taskTimeout, shouldContinue, retries = 5} = options
+  const strategy = strategies[options.strategy] || strategies['fixed-interval']
+
+  const mergedOptions = {...options, ...strategy.defaults}
+
+  const {taskFn, masterTimeout, taskTimeout, shouldContinue, retries = 5} = mergedOptions
 
   let polling = true
   let timeoutId: null | number
@@ -45,8 +41,9 @@ const promisePoller = (options: Options) => {
       taskPromise
         .then(result => {
           if (shouldContinue(null, result)) {
+            const nextInterval = strategy.getNextInterval(retriesRemain, options)
             // 继续轮询
-            delay(interval).then(poll)
+            delay(nextInterval).then(poll)
           } else {
             // 不需要轮询，有 timeoutId 则清除
             if (timeoutId !== null) {
@@ -68,7 +65,9 @@ const promisePoller = (options: Options) => {
           if (--retriesRemain === 0 || !shouldContinue(error)) {
             reject(rejections)
           } else if (polling) {
-            delay(interval).then(poll);
+            const nextInterval = strategy.getNextInterval(retriesRemain, options)
+            // 重试轮询
+            delay(nextInterval).then(poll);
           }
         })
     }
