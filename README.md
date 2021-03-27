@@ -506,3 +506,4 @@ const promisePoller = (options: Options) => {
 4. 提供轮询任务重试的功能
 5. 提供多种轮询策略：fixed-interval, linear-backoff, exponential-backoff
 
+以上就是 npm 包 promise-poller 的源码实现了。
