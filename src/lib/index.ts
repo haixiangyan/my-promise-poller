@@ -6,7 +6,7 @@ const promisePoller = (options: Options) => {
 
   const mergedOptions = {...strategy.defaults, ...options}
 
-  const {taskFn, masterTimeout, taskTimeout, shouldContinue, retries = 5} = mergedOptions
+  const {taskFn, masterTimeout, taskTimeout, progressCallback, shouldContinue, retries = 5} = mergedOptions
 
   let polling = true
   let timeoutId: null | number
@@ -62,6 +62,11 @@ const promisePoller = (options: Options) => {
           }
 
           rejections.push(error)
+
+          // 回调获取 retriesRemain
+          if (progressCallback) {
+             progressCallback(retriesRemain, error)
+          }
 
           if (--retriesRemain === 0 || !shouldContinue(error)) {
             // 不需要轮询
