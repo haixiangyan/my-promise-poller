@@ -1,6 +1,6 @@
 # 造一个 promise-poller 轮子
 
-![](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/bda03255712c489982d392828356a73d~tplv-k3u1fbpfcp-zoom-1.image)
+![](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/f9e816410ded421cb07ebdae647a3dc6~tplv-k3u1fbpfcp-zoom-1.image)
 
 > 项目代码：https://github.com/Haixiang6123/my-promise-poller
 >
@@ -293,6 +293,53 @@ const promisePoller = (options: Options) => {
 
 上面还添加 `rejections` 变量用于存放多个 error 信息。这样的设计是因为有可能 10 个任务里 2 个失败了，那最后就要把 2 个失败的信息都返回，因此需要一个数组存放错误信息。
 
+这里还一个优化点：我们常常看到别人页面获取数据失败都会显示 1/3 获取... 2/3 获取... 3/3 获取... 直到真的获取失败，相当于有个进度条，这样对用户也比较好。所以，在 `Options` 可以提供一个回调，每次 `retriesRemain` 要减少时调用一下就好了。
+
+```ts
+interface Options {
+  taskFn: Function 
+  interval: number 
+  shouldContinue: (err: string | null, result?: any) => boolean 
+  progressCallback?: (retriesRemain: number, error: Error) => unknown // 剩余次数回调
+  masterTimeout?: number 
+  taskTimeout?: number 
+  retries?: number // 轮询任务失败后重试次数
+}
+
+const promisePoller = (options: Options) => {
+  ...
+  let rejections: Array<Error | string> = []
+  let retriesRemain = retries
+
+  return new Promise((resolve, reject) => {
+    ...
+    const poll = () => {
+      ...
+
+      taskPromise
+        .then(result => {
+          ...
+        })
+        .catch(error => {
+          rejections.push(error) // 加入 rejections 错误列表
+
+          if (progressCallback) {
+             progressCallback(retriesRemain, error) // 回调获取 retriesRemain
+          }
+          
+          if (--retriesRemain === 0 || !shouldContinue(error)) { // 判断是否需要重试
+            reject(rejections) // 不重试，直接失败
+          } else {
+            delay(interval).then(poll); // 重试
+          }
+        })
+    }
+
+    poll()
+  })
+}
+```
+
 ## 主动停止轮询
 
 虽然 `shouldContinue` 已经可以有效地控制流程是否要中止，但是每次都要等下一次轮询开始之后才会判断，这样未免有点被动。如果可以在 `taskFn` 执行的时候就主动停止，那 `promisePoller` 就更灵活了。
@@ -303,7 +350,7 @@ const promisePoller = (options: Options) => {
 const CANCEL_TOKEN = 'CANCEL_TOKEN'
 
 const promisePoller = (options: Options) => {
-  const {taskFn, interval, masterTimeout, taskTimeout, shouldContinue, retries} = options
+  const {taskFn, masterTimeout, taskTimeout, progressCallback, shouldContinue, retries = 5} = mergedOptions
 
   let polling = true
   let timeoutId: null | number
@@ -344,6 +391,10 @@ const promisePoller = (options: Options) => {
           }
 
           rejections.push(error)
+          
+          if (progressCallback) {
+             progressCallback(retriesRemain, error)
+          }
 
           if (--retriesRemain === 0 || !shouldContinue(error)) {
             reject(rejections)
@@ -409,6 +460,7 @@ type StrategyName = 'fixed-interval' | 'linear-backoff' | 'exponential-backoff'
 interface Options {
   taskFn: Function
   shouldContinue: (err: Error | null, result?: any) => boolean // 当次轮询后是否需要继续
+  progressCallback?: (retriesRemain: number, error: Error) => unknown // 剩余次数回调
   strategy?: StrategyName // 轮询策略
   masterTimeout?: number
   taskTimeout?: number
@@ -432,7 +484,7 @@ const promisePoller = (options: Options) => {
 
   const mergedOptions = {...strategy.defaults, ...options} // 合并轮询策略的初始参数
 
-  const {taskFn, masterTimeout, taskTimeout, shouldContinue, retries = 5} = mergedOptions
+  const {taskFn, masterTimeout, taskTimeout, progressCallback, shouldContinue, retries = 5} = mergedOptions
 
   let polling = true
   let timeoutId: null | number
@@ -482,6 +534,10 @@ const promisePoller = (options: Options) => {
 
           rejections.push(error)
 
+          if (progressCallback) {
+             progressCallback(retriesRemain, error)
+          }
+
           if (--retriesRemain === 0 || !shouldContinue(error)) {
             reject(rejections)
           } else if (polling) {
@@ -503,7 +559,7 @@ const promisePoller = (options: Options) => {
 1. 基础的轮询操作
 2. 返回 promise
 3. 提供主动和被动中止轮询的方法
-4. 提供轮询任务重试的功能
+4. 提供轮询任务重试的功能，并提供重试进度回调
 5. 提供多种轮询策略：fixed-interval, linear-backoff, exponential-backoff
 
-以上就是 npm 包 promise-poller 的源码实现了。
+以上就是 npm 包 [promise-poller](https://www.npmjs.com/package/promise-poller) 的源码实现了。
