@@ -6,7 +6,7 @@ export interface Options {
   masterTimeout?: number // 整个轮询过程的 timeout
   shouldContinue: (err: Error | null, result?: any) => boolean // 当次轮询后是否需要继续
   taskTimeout?: number // 轮询任务的 timeout
-  progressCallback?: (retriesRemain: number, error: Error) => unknown
+  progressCallback?: (retriesRemain: number, error: Error) => unknown // 剩余次数回调
   retries?: number //轮询任务失败后重试次数
   // fixed-interval 策略
   interval?: number // 轮询周期
